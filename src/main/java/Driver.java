@@ -1,3 +1,4 @@
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -5,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import northwind.client.ReactiveSSEClient;
 import northwind.model.Order;
 import northwind.service.api.IOrderService;
 import org.springframework.context.ApplicationContext;
@@ -17,6 +19,8 @@ import northwind.model.Product;
 import northwind.service.api.ICustomerService;
 import northwind.service.api.IOrderItemService;
 import northwind.service.api.IProductService;
+import org.springframework.http.codec.ServerSentEvent;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
@@ -35,13 +39,13 @@ public class Driver {
 		
 		IProductService productService = ctx.getBean(IProductService.class);
 		Mono<Product> productMono = productService.getProduct(1);
-		
+
 		ICustomerService customerService  = ctx.getBean(ICustomerService.class);
 		Mono<Customer> customerMono = customerService.getCustomer("ALFKI");
-		
+
 		IOrderItemService orderItemsSvc = ctx.getBean(IOrderItemService.class);
 		Mono<List<OrderItems>> oiMono = orderItemsSvc.getOrderItems(10248);
-		
+
 		Mono<Tuple2<Product,Customer>> tuple = Mono.zip(productMono,customerMono);
 		tuple.subscribe((t)->{
 			Product product = t.getT1();
@@ -64,6 +68,24 @@ public class Driver {
 				System.out.println(item.getProduct().getName());
 			}
 		});
+		Mono<List<Integer>> orderIdsMono = orderService.getOrderIds();
+		orderIdsMono.subscribe(orderIds->{
+			Flux.fromIterable(orderIds)
+					.take(5)
+					.delayElements(Duration.ofSeconds(5))
+					.flatMap(orderId -> orderService.getOrder(orderId))
+					.subscribe((order)->{
+						System.out.println(order);
+
+					});
+		});
+
+		ReactiveSSEClient sseClient = ctx.getBean(ReactiveSSEClient.class);
+		Flux<ServerSentEvent<Order>> orderStream = sseClient.getServerSentOrders();
+		orderStream.subscribe( sse -> {
+			System.out.println("order id: "+sse.id());
+			System.out.println(sse.data());
+		} );
 		Thread.sleep(100000);
 	}
 

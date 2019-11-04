@@ -3,6 +3,7 @@ package northwind.service.impl;
 import java.util.HashMap;
 import java.util.Map;
 
+import northwind.util.NorthwindUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class CustomerService implements ICustomerService {
 		queryParams.put("$filter", "CustomerID eq '"+customerId+"'");
 		return Mono.create((emitter)->{
 		try {
-			Mono<ClientResponse> response = httpClient.request("Customers", HttpMethod.GET, headers, queryParams,null);
+			Mono<ClientResponse> response = httpClient.request(NorthwindUtil.URL,"Customers", HttpMethod.GET, headers, queryParams,null);
 			System.out.println("Non blocking");
 			response.subscribeOn(schedular);
 			response.subscribe((ClientResponse clientResponse)->{

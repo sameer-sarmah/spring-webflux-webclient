@@ -3,6 +3,10 @@ package northwind.util;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,5 +74,23 @@ public class OrderExtractor {
 	public static LocalDateTime parse(String dateStr) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 		return LocalDateTime.parse(dateStr, formatter);
+	}
+
+	public static List<Integer> extractOrderIds(String jsonString){
+		JsonNode parent;
+		try {
+			parent = new ObjectMapper().readTree(jsonString);
+			JsonNode node = parent.get("value");
+			if (node instanceof ArrayNode) {
+				ArrayNode orders = (ArrayNode) node;
+				List<Integer> orderIds = StreamSupport.stream(orders.spliterator(), false).map((orderNode) -> {
+					return orderNode.get("OrderID").asInt();
+				}).collect(Collectors.toList());
+				return orderIds;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

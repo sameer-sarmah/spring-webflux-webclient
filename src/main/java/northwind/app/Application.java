@@ -1,6 +1,8 @@
 package northwind.app;
 
 import northwind.config.AppConfig;
+import northwind.listener.NorthwindApplicationListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -11,8 +13,12 @@ import org.springframework.context.annotation.Import;
 @Import(AppConfig.class)
 public class Application  extends SpringBootServletInitializer {
 
+    @Autowired
+    private NorthwindApplicationListener northwindApplicationListener;
+
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        application.listeners(northwindApplicationListener);
         return application.sources(Application.class);
     }
 

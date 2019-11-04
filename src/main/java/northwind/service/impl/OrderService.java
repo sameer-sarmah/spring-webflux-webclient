@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import northwind.util.NorthwindUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import northwind.service.api.IOrderItemService;
 import northwind.service.api.IOrderService;
 import northwind.service.api.IProductService;
 import northwind.util.OrderExtractor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.function.Tuple2;
@@ -46,7 +48,30 @@ public class OrderService implements IOrderService {
 
 	@Autowired
 	IOrderItemService orderItemsSvc;
-	
+
+	@Override
+	public Mono<List<Integer>> getOrderIds() {
+		Map<String, String> headers = new HashMap<>();
+		Map<String, String> queryParams = new HashMap<>();
+		queryParams.put("$select", "OrderID");
+		return Mono.create((emitter)->{
+			try {
+				Mono<ClientResponse> response = httpClient.request(NorthwindUtil.URL,"Orders", HttpMethod.GET, headers, queryParams, null);
+				response.subscribeOn(schedular);
+				response.subscribe((ClientResponse clientResponse) -> {
+					clientResponse.bodyToMono(String.class).subscribe((json) -> {
+						List<Integer> orderIds = OrderExtractor.extractOrderIds(json);
+						emitter.success(orderIds);
+					});
+
+				});
+			}catch (CoreException e) {
+				e.printStackTrace();
+				emitter.error(e);
+			}
+		});
+	}
+
 	@Override
 	public Mono<Order> getOrder(int orderID) {
 
@@ -57,7 +82,7 @@ public class OrderService implements IOrderService {
 		return Mono.create((emitter)->{
 		try {
 			Mono<List<OrderItems>> oiMono = orderItemsSvc.getOrderItems(orderID);
-			Mono<ClientResponse> response = httpClient.request("Orders", HttpMethod.GET, headers, queryParams,null);
+			Mono<ClientResponse> response = httpClient.request(NorthwindUtil.URL,"Orders", HttpMethod.GET, headers, queryParams,null);
 			System.out.println("Non blocking");
 			response.subscribeOn(schedular);
 			response.subscribe((ClientResponse clientResponse)->{

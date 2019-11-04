@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import northwind.model.Product;
 import northwind.service.api.IProductService;
+import northwind.util.NorthwindUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class OrderItemService implements IOrderItemService {
 		queryParams.put("$filter", "OrderID eq "+orderId);
 		return Mono.create((emitter)->{
 		try {
-			Mono<ClientResponse> response = httpClient.request("Order_Details", HttpMethod.GET, headers, queryParams,null);
+			Mono<ClientResponse> response = httpClient.request(NorthwindUtil.URL,"Order_Details", HttpMethod.GET, headers, queryParams,null);
 			response.subscribeOn(schedular);
 			List<Mono<Product>> productsMono = new ArrayList<>();
 			response.subscribe((ClientResponse clientResponse)->{

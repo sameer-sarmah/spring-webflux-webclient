@@ -20,9 +20,9 @@ import reactor.core.publisher.Mono;
 @Component
 public class ReactiveHttpClient {
 	final static Logger logger = Logger.getLogger(ReactiveHttpClient.class);
-	final String url = "https://services.odata.org/Northwind/Northwind.svc/";
+
 	
-	public Mono<ClientResponse> request(final String entity, final HttpMethod method, Map<String, String> headers,
+	public Mono<ClientResponse> request(final String url,final String entity, final HttpMethod method, Map<String, String> headers,
 			Map<String, String> queryParams, final String jsonString) throws CoreException {
 
 		WebClient client = WebClient.builder()
